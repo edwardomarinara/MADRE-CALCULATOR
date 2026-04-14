@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sourdough Bread Calculator</title>
+    <title>Sourdough Bread Calculator - Full Oven Batch</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -59,6 +59,12 @@
             color: #333;
             margin-bottom: 15px;
             font-size: 1.3em;
+        }
+
+        .section h3 {
+            color: #555;
+            margin: 15px 0 10px 0;
+            font-size: 1.1em;
         }
 
         select, input, button {
@@ -114,6 +120,11 @@
             color: #f5a623;
         }
 
+        .result h4 {
+            margin: 15px 0 10px 0;
+            color: #f5a623;
+        }
+
         .ingredient {
             padding: 8px 0;
             border-bottom: 1px solid #34495e;
@@ -142,18 +153,31 @@
             font-size: 14px;
         }
 
-        .hidden {
-            display: none;
+        .batch-box {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
 
-        @media (max-width: 600px) {
-            .content {
-                padding: 20px;
-            }
-            
-            .ingredient {
-                font-size: 16px;
-            }
+        .fermentation-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .fermentation-buttons button {
+            flex: 1;
+            background: #f5a623;
+            margin: 0;
+        }
+
+        .fermentation-buttons button:hover {
+            background: #e09510;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -191,6 +215,8 @@
             4: { name: "Senator Cappelli", hydration: 80, two_step: false }
         };
 
+        let fermentationChoices = {};
+
         function calculateIngredients(doughWeight, hydration, starterPercent) {
             const h = hydration / 100;
             const s = starterPercent / 100;
@@ -200,6 +226,11 @@
             const salt = water * 0.033;
             const starter = flour * s;
             return { flour, water, salt, starter };
+        }
+
+        function askFermentation(breadName, callback) {
+            const modal = confirm(`${breadName}: Click OK for Slow Fermentation (1% starter) or Cancel for Fast Fermentation (20% starter)`);
+            callback(modal ? 1 : 20);
         }
 
         function updateInputs() {
@@ -241,22 +272,26 @@
             } else {
                 dynamicDiv.innerHTML = `
                     <h2>🔥 FULL OVEN BATCH</h2>
-                    <h3>Batch 1: Spelt & Senator Cappelli (7 loaves)</h3>
-                    <label>How many Spelt loaves? (0-7):</label>
-                    <input type="number" id="speltLoavesFull" min="0" max="7" value="4">
-                    
-                    <h3>Batch 2: Whole Wheat & Rye (8 loaves)</h3>
-                    <label>How many Whole Wheat loaves? (0-8):</label>
-                    <input type="number" id="wheatLoavesFull" min="0" max="8" value="4">
-                    <div class="info">Total dough: 8400g (batch 1) + 9600g (batch 2) = 18,000g (18kg)</div>
+                    <div class="batch-box">
+                        <h3>Batch 1: Spelt & Senator Cappelli (7 loaves, 1200g each = 8400g total)</h3>
+                        <label>How many Spelt loaves? (0-7):</label>
+                        <input type="number" id="speltLoavesFull" min="0" max="7" value="4">
+                    </div>
+                    <div class="batch-box">
+                        <h3>Batch 2: Whole Wheat & Rye (8 loaves, 1200g each = 9600g total)</h3>
+                        <label>How many Whole Wheat loaves? (0-8):</label>
+                        <input type="number" id="wheatLoavesFull" min="0" max="8" value="4">
+                    </div>
+                    <div class="info">Total dough needed: 8400g + 9600g = 18,000g (18kg)</div>
+                    <div class="info">💡 You will be asked for fermentation choices for each bread type</div>
                 `;
             }
         }
 
-        function calculateRecipe() {
+        async function calculateRecipe() {
             const batchType = document.getElementById('batchType').value;
             const resultsDiv = document.getElementById('results');
-            let html = '<h3>📊 YOUR RECIPE</h3>';
+            let html = '<h3>📊 YOUR COMPLETE RECIPE</h3>';
             
             if (batchType === '1') {
                 const speltLoaves = parseInt(document.getElementById('speltLoaves').value);
@@ -265,26 +300,28 @@
                 const cappelliDough = cappelliLoaves * 1200;
                 
                 if (speltLoaves > 0) {
-                    const starterPercent = confirm('Slow (1% starter) or Fast (20% starter)? Click OK for Slow, Cancel for Fast') ? 1 : 20;
+                    const starterPercent = confirm('Spelt Bread: Click OK for Slow (1% starter) or Cancel for Fast (20% starter)') ? 1 : 20;
                     const { flour, water, salt, starter } = calculateIngredients(speltDough, 82, starterPercent);
                     html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
-                        <h4>🌾 SPELT (${speltLoaves} loaves)</h4>
+                        <h4>🌾 SPELT (${speltLoaves} loaves) - ${starterPercent}% starter</h4>
                         <div class="ingredient">🥖 Flour: <span>${flour.toFixed(1)}g</span> (${(flour/1000).toFixed(2)} kg)</div>
                         <div class="ingredient">💧 Water: <span>${water.toFixed(1)}g</span> (${(water/1000).toFixed(2)} L)</div>
-                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter)</div>
-                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span> (${starterPercent}%)</div>
+                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter = ${(water/1000 * 33).toFixed(1)}g)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span> (${starterPercent}% of flour)</div>
+                        <div class="ingredient">📦 Per loaf: <span>${(speltDough/speltLoaves).toFixed(0)}g</span> dough</div>
                     </div>`;
                 }
                 
                 if (cappelliLoaves > 0) {
-                    const starterPercent = confirm('Senator Cappelli: Slow (1% starter) or Fast (20% starter)? Click OK for Slow, Cancel for Fast') ? 1 : 20;
+                    const starterPercent = confirm('Senator Cappelli: Click OK for Slow (1% starter) or Cancel for Fast (20% starter)') ? 1 : 20;
                     const { flour, water, salt, starter } = calculateIngredients(cappelliDough, 80, starterPercent);
                     html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
-                        <h4>🌾 SENATOR CAPPELLI (${cappelliLoaves} loaves)</h4>
+                        <h4>🌾 SENATOR CAPPELLI (${cappelliLoaves} loaves) - ${starterPercent}% starter</h4>
                         <div class="ingredient">🥖 Flour: <span>${flour.toFixed(1)}g</span> (${(flour/1000).toFixed(2)} kg)</div>
                         <div class="ingredient">💧 Water: <span>${water.toFixed(1)}g</span> (${(water/1000).toFixed(2)} L)</div>
-                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter)</div>
-                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span> (${starterPercent}%)</div>
+                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter = ${(water/1000 * 33).toFixed(1)}g)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span> (${starterPercent}% of flour)</div>
+                        <div class="ingredient">📦 Per loaf: <span>${(cappelliDough/cappelliLoaves).toFixed(0)}g</span> dough</div>
                     </div>`;
                 }
                 
@@ -295,24 +332,57 @@
                 const ryeDough = ryeLoaves * 1200;
                 
                 if (wheatLoaves > 0) {
-                    const starterPercent = confirm('Whole Wheat: Slow (1% starter) or Fast (20% starter)? Click OK for Slow, Cancel for Fast') ? 1 : 20;
+                    const starterPercent = confirm('Whole Wheat: Click OK for Slow (1% starter) or Cancel for Fast (20% starter)') ? 1 : 20;
                     const { flour, water, salt, starter } = calculateIngredients(wheatDough, 75, starterPercent);
                     html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
-                        <h4>🌾 WHOLE WHEAT (${wheatLoaves} loaves)</h4>
+                        <h4>🌾 WHOLE WHEAT (${wheatLoaves} loaves) - ${starterPercent}% starter</h4>
                         <div class="ingredient">🥖 Flour: <span>${flour.toFixed(1)}g</span> (${(flour/1000).toFixed(2)} kg)</div>
                         <div class="ingredient">💧 Water: <span>${water.toFixed(1)}g</span> (${(water/1000).toFixed(2)} L)</div>
-                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter)</div>
-                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span> (${starterPercent}%)</div>
+                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter = ${(water/1000 * 33).toFixed(1)}g)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span> (${starterPercent}% of flour)</div>
+                        <div class="ingredient">📦 Per loaf: <span>${(wheatDough/wheatLoaves).toFixed(0)}g</span> dough</div>
                     </div>`;
                 }
                 
                 if (ryeLoaves > 0) {
+                    // For rye, two-step process
+                    const flourPerLoaf = 1200 / 2.17805;
+                    const waterPerLoaf = flourPerLoaf * 0.85;
+                    const saltPerLoaf = waterPerLoaf * 0.033;
+                    const prefermentFlourPerLoaf = flourPerLoaf * 0.30;
+                    const prefermentWaterPerLoaf = prefermentFlourPerLoaf;
+                    const prefermentStarterPerLoaf = prefermentFlourPerLoaf;
+                    const remainingFlourPerLoaf = flourPerLoaf - prefermentFlourPerLoaf;
+                    const remainingWaterPerLoaf = waterPerLoaf - prefermentWaterPerLoaf;
+                    
+                    const totalFlour = flourPerLoaf * ryeLoaves;
+                    const totalWater = waterPerLoaf * ryeLoaves;
+                    const totalSalt = saltPerLoaf * ryeLoaves;
+                    const totalPrefermentFlour = prefermentFlourPerLoaf * ryeLoaves;
+                    const totalPrefermentWater = prefermentWaterPerLoaf * ryeLoaves;
+                    const totalPrefermentStarter = prefermentStarterPerLoaf * ryeLoaves;
+                    const totalRemainingFlour = remainingFlourPerLoaf * ryeLoaves;
+                    const totalRemainingWater = remainingWaterPerLoaf * ryeLoaves;
+                    
                     html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
                         <h4>🌾 RYE (${ryeLoaves} loaves) - Two-Step Process</h4>
-                        <div class="info">📌 For ${ryeLoaves} loaves of rye bread:</div>
-                        <div class="ingredient">📍 STEP 1 - Pre-ferment (Day 1): Mix and ferment 8-12 hours</div>
-                        <div class="ingredient">📍 STEP 2 - Final Dough (Day 2): Add remaining ingredients</div>
-                        <div class="info mt-2">💡 Rye requires a two-day fermentation process for best results.</div>
+                        <div class="info" style="background: #f5a623; color: #2c3e50; margin-bottom: 10px;">
+                            📌 RYE REQUIRES TWO-STEP FERMENTATION (8-12 hours for step 1)
+                        </div>
+                        <h4 style="margin-top: 10px;">📍 STEP 1 - Pre-ferment (Day 1):</h4>
+                        <div class="ingredient">🌾 Rye flour: <span>${totalPrefermentFlour.toFixed(1)}g</span> (${(totalPrefermentFlour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Water: <span>${totalPrefermentWater.toFixed(1)}g</span> (${(totalPrefermentWater/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🌱 Starter: <span>${totalPrefermentStarter.toFixed(1)}g</span> (100% of preferment flour)</div>
+                        <div class="info">→ Mix and ferment at room temperature for 8-12 hours</div>
+                        
+                        <h4 style="margin-top: 15px;">📍 STEP 2 - Final Dough (Day 2):</h4>
+                        <div class="ingredient">🌾 Remaining rye flour: <span>${totalRemainingFlour.toFixed(1)}g</span> (${(totalRemainingFlour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Remaining water: <span>${totalRemainingWater.toFixed(1)}g</span> (${(totalRemainingWater/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🧂 Salt: <span>${totalSalt.toFixed(1)}g</span> (33g per liter = ${(totalWater/1000 * 33).toFixed(1)}g)</div>
+                        <div class="ingredient">🔄 All of the pre-ferment from Step 1</div>
+                        
+                        <div class="total" style="margin-top: 15px;">📦 Total rye flour: ${totalFlour.toFixed(1)}g (${(totalFlour/1000).toFixed(2)} kg)</div>
+                        <div class="total">📦 Total rye dough: ${ryeDough}g (${(ryeDough/1000).toFixed(2)} kg)</div>
                     </div>`;
                 }
                 
@@ -328,9 +398,13 @@
                 
                 html += `<div class="ingredient">🥖 Flour: <span>${flourAmount.toFixed(1)}g</span> (${(flourAmount/1000).toFixed(2)} kg)</div>
                         <div class="ingredient">💧 Water: <span>${waterAmount.toFixed(1)}g</span> (${(waterAmount/1000).toFixed(2)} L)</div>
-                        <div class="ingredient">🧂 Salt: <span>${saltAmount.toFixed(1)}g</span> (33g per liter)</div>
-                        <div class="ingredient">🌾 Starter: <span>${starterAmount.toFixed(1)}g</span> (${starterPercent}%)</div>
+                        <div class="ingredient">🧂 Salt: <span>${saltAmount.toFixed(1)}g</span> (33g per liter = ${(waterAmount/1000 * 33).toFixed(1)}g)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starterAmount.toFixed(1)}g</span> (${starterPercent}% of flour)</div>
                         <div class="total">📦 Total Dough: <span>${totalDough.toFixed(1)}g</span> (${(totalDough/1000).toFixed(2)} kg)</div>`;
+                
+                if (bread.two_step) {
+                    html += `<div class="info" style="margin-top: 15px;">📌 Rye requires two-step fermentation. See full oven batch option for details.</div>`;
+                }
                 
             } else if (batchType === '4') {
                 const speltLoaves = parseInt(document.getElementById('speltLoavesFull').value);
@@ -338,11 +412,96 @@
                 const wheatLoaves = parseInt(document.getElementById('wheatLoavesFull').value);
                 const ryeLoaves = 8 - wheatLoaves;
                 
-                html += `<h4>📊 FULL OVEN BATCH - GRAND TOTAL</h4>
-                        <div class="info">Batch 1 (7 moulds): ${speltLoaves} Spelt + ${cappelliLoaves} Senator Cappelli</div>
-                        <div class="info">Batch 2 (8 loaves): ${wheatLoaves} Whole Wheat + ${ryeLoaves} Rye</div>
-                        <div class="info">Total dough: 18,000g (18 kg)</div>
-                        <div class="info mt-2">💡 Start rye pre-ferment first (needs 8-12 hours)</div>`;
+                html += `<div class="info" style="background: #f5a623; color: #2c3e50; margin-bottom: 20px;">
+                            🔥 FULL OVEN BATCH - Complete ingredients for all breads
+                         </div>`;
+                
+                // Spelt
+                if (speltLoaves > 0) {
+                    const starterPercent = confirm(`Spelt (${speltLoaves} loaves): Click OK for Slow (1% starter) or Cancel for Fast (20% starter)`) ? 1 : 20;
+                    const speltDough = speltLoaves * 1200;
+                    const { flour, water, salt, starter } = calculateIngredients(speltDough, 82, starterPercent);
+                    html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
+                        <h4>🌾 SPELT (${speltLoaves} loaves) - ${starterPercent}% starter</h4>
+                        <div class="ingredient">🥖 Flour: <span>${flour.toFixed(1)}g</span> (${(flour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Water: <span>${water.toFixed(1)}g</span> (${(water/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span></div>
+                    </div>`;
+                }
+                
+                // Senator Cappelli
+                if (cappelliLoaves > 0) {
+                    const starterPercent = confirm(`Senator Cappelli (${cappelliLoaves} loaves): Click OK for Slow (1% starter) or Cancel for Fast (20% starter)`) ? 1 : 20;
+                    const cappelliDough = cappelliLoaves * 1200;
+                    const { flour, water, salt, starter } = calculateIngredients(cappelliDough, 80, starterPercent);
+                    html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
+                        <h4>🌾 SENATOR CAPPELLI (${cappelliLoaves} loaves) - ${starterPercent}% starter</h4>
+                        <div class="ingredient">🥖 Flour: <span>${flour.toFixed(1)}g</span> (${(flour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Water: <span>${water.toFixed(1)}g</span> (${(water/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span></div>
+                    </div>`;
+                }
+                
+                // Whole Wheat
+                if (wheatLoaves > 0) {
+                    const starterPercent = confirm(`Whole Wheat (${wheatLoaves} loaves): Click OK for Slow (1% starter) or Cancel for Fast (20% starter)`) ? 1 : 20;
+                    const wheatDough = wheatLoaves * 1200;
+                    const { flour, water, salt, starter } = calculateIngredients(wheatDough, 75, starterPercent);
+                    html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
+                        <h4>🌾 WHOLE WHEAT (${wheatLoaves} loaves) - ${starterPercent}% starter</h4>
+                        <div class="ingredient">🥖 Flour: <span>${flour.toFixed(1)}g</span> (${(flour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Water: <span>${water.toFixed(1)}g</span> (${(water/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🧂 Salt: <span>${salt.toFixed(1)}g</span> (33g per liter)</div>
+                        <div class="ingredient">🌾 Starter: <span>${starter.toFixed(1)}g</span></div>
+                    </div>`;
+                }
+                
+                // Rye
+                if (ryeLoaves > 0) {
+                    const flourPerLoaf = 1200 / 2.17805;
+                    const waterPerLoaf = flourPerLoaf * 0.85;
+                    const saltPerLoaf = waterPerLoaf * 0.033;
+                    const prefermentFlourPerLoaf = flourPerLoaf * 0.30;
+                    const prefermentWaterPerLoaf = prefermentFlourPerLoaf;
+                    const prefermentStarterPerLoaf = prefermentFlourPerLoaf;
+                    const remainingFlourPerLoaf = flourPerLoaf - prefermentFlourPerLoaf;
+                    const remainingWaterPerLoaf = waterPerLoaf - prefermentWaterPerLoaf;
+                    
+                    const totalFlour = flourPerLoaf * ryeLoaves;
+                    const totalWater = waterPerLoaf * ryeLoaves;
+                    const totalSalt = saltPerLoaf * ryeLoaves;
+                    const totalPrefermentFlour = prefermentFlourPerLoaf * ryeLoaves;
+                    const totalPrefermentWater = prefermentWaterPerLoaf * ryeLoaves;
+                    const totalPrefermentStarter = prefermentStarterPerLoaf * ryeLoaves;
+                    const totalRemainingFlour = remainingFlourPerLoaf * ryeLoaves;
+                    const totalRemainingWater = remainingWaterPerLoaf * ryeLoaves;
+                    
+                    html += `<div style="margin: 15px 0; padding: 15px; background: #34495e; border-radius: 8px;">
+                        <h4>🌾 RYE (${ryeLoaves} loaves) - Two-Step Process</h4>
+                        <div class="info" style="background: #f5a623; color: #2c3e50; margin-bottom: 10px;">
+                            📌 Start this first! Rye needs 8-12 hours for Step 1
+                        </div>
+                        <h4>📍 STEP 1 - Pre-ferment (Day 1):</h4>
+                        <div class="ingredient">🌾 Rye flour: <span>${totalPrefermentFlour.toFixed(1)}g</span> (${(totalPrefermentFlour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Water: <span>${totalPrefermentWater.toFixed(1)}g</span> (${(totalPrefermentWater/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🌱 Starter: <span>${totalPrefermentStarter.toFixed(1)}g</span></div>
+                        
+                        <h4 style="margin-top: 15px;">📍 STEP 2 - Final Dough (Day 2):</h4>
+                        <div class="ingredient">🌾 Remaining rye flour: <span>${totalRemainingFlour.toFixed(1)}g</span> (${(totalRemainingFlour/1000).toFixed(2)} kg)</div>
+                        <div class="ingredient">💧 Remaining water: <span>${totalRemainingWater.toFixed(1)}g</span> (${(totalRemainingWater/1000).toFixed(2)} L)</div>
+                        <div class="ingredient">🧂 Salt: <span>${totalSalt.toFixed(1)}g</span> (33g per liter)</div>
+                        <div class="ingredient">🔄 All of the pre-ferment from Step 1</div>
+                        <div class="total" style="margin-top: 10px;">📦 Total rye dough: ${ryeLoaves * 1200}g (${(ryeLoaves * 1.2).toFixed(2)} kg)</div>
+                    </div>`;
+                }
+                
+                // Grand total
+                const totalDough = (speltLoaves + cappelliLoaves) * 1200 + (wheatLoaves + ryeLoaves) * 1200;
+                html += `<div class="total" style="margin-top: 20px; text-align: center; font-size: 24px;">
+                            🍞 GRAND TOTAL DOUGH: ${totalDough}g (${totalDough/1000} kg)
+                         </div>`;
             }
             
             resultsDiv.innerHTML = html;
